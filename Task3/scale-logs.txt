@@ -1,0 +1,76 @@
+dmtrnv@DESKTOP-FEF9D0A:/mnt/c/users/renev/riderprojects/msa-novamarket/task3$ kubectl top pods
+NAME                            CPU(cores)   MEMORY(bytes)
+scaletestapp-5cb9d46cfb-hc6c8   20m          13Mi
+dmtrnv@DESKTOP-FEF9D0A:/mnt/c/users/renev/riderprojects/msa-novamarket/task3$ kubectl describe hpa scaletestapp
+Name:                                                     scaletestapp
+Namespace:                                                default
+Labels:                                                   <none>
+Annotations:                                              <none>
+CreationTimestamp:                                        Wed, 23 Sep 2026 23:47:30 +0300
+Reference:                                                Deployment/scaletestapp
+Metrics:                                                  ( current / target )
+  resource memory on pods  (as a percentage of request):  91% (14116Ki) / 80%
+Min replicas:                                             1
+Max replicas:                                             10
+Behavior:
+  Scale Up:
+    Stabilization Window: 0 seconds
+    Select Policy: Max
+    Policies:
+      - Type: Percent  Value: 100  Period: 15 seconds
+  Scale Down:
+    Stabilization Window: 60 seconds
+    Select Policy: Max
+    Policies:
+      - Type: Percent  Value: 50  Period: 60 seconds
+Deployment pods:       2 current / 2 desired
+Conditions:
+  Type            Status  Reason              Message
+  ----            ------  ------              -------
+  AbleToScale     True    ReadyForNewScale    recommended size matches current size
+  ScalingActive   True    ValidMetricFound    the HPA was able to successfully calculate a replica count from memory resource utilization (percentage of request)
+  ScalingLimited  False   DesiredWithinRange  the desired count is within the acceptable range
+  ScaledToZero    False   NotScaledToZero     the HPA controller did not scale the workload to zero
+Events:
+  Type    Reason             Age   From                       Message
+  ----    ------             ----  ----                       -------
+  Normal  SuccessfulRescale  46s   horizontal-pod-autoscaler  New size: 2; reason: memory resource utilization (percentage of request) above target
+dmtrnv@DESKTOP-FEF9D0A:/mnt/c/users/renev/riderprojects/msa-novamarket/task3$ kubectl top pods
+NAME                            CPU(cores)   MEMORY(bytes)
+scaletestapp-5cb9d46cfb-blkxj   1m           1Mi
+scaletestapp-5cb9d46cfb-hc6c8   24m          15Mi
+dmtrnv@DESKTOP-FEF9D0A:/mnt/c/users/renev/riderprojects/msa-novamarket/task3$ kubectl describe hpa scaletestapp
+Name:                                                     scaletestapp
+Namespace:                                                default
+Labels:                                                   <none>
+Annotations:                                              <none>
+CreationTimestamp:                                        Wed, 23 Sep 2026 23:47:30 +0300
+Reference:                                                Deployment/scaletestapp
+Metrics:                                                  ( current / target )
+  resource memory on pods  (as a percentage of request):  95% (14624Ki) / 80%
+Min replicas:                                             1
+Max replicas:                                             10
+Behavior:
+  Scale Up:
+    Stabilization Window: 0 seconds
+    Select Policy: Max
+    Policies:
+      - Type: Percent  Value: 100  Period: 15 seconds
+  Scale Down:
+    Stabilization Window: 60 seconds
+    Select Policy: Max
+    Policies:
+      - Type: Percent  Value: 50  Period: 60 seconds
+Deployment pods:       3 current / 3 desired
+Conditions:
+  Type            Status  Reason              Message
+  ----            ------  ------              -------
+  AbleToScale     True    ReadyForNewScale    recommended size matches current size
+  ScalingActive   True    ValidMetricFound    the HPA was able to successfully calculate a replica count from memory resource utilization (percentage of request)
+  ScalingLimited  False   DesiredWithinRange  the desired count is within the acceptable range
+  ScaledToZero    False   NotScaledToZero     the HPA controller did not scale the workload to zero
+Events:
+  Type    Reason             Age    From                       Message
+  ----    ------             ----   ----                       -------
+  Normal  SuccessfulRescale  5m47s  horizontal-pod-autoscaler  New size: 2; reason: memory resource utilization (percentage of request) above target
+  Normal  SuccessfulRescale  47s    horizontal-pod-autoscaler  New size: 3; reason: memory resource utilization (percentage of request) above target
