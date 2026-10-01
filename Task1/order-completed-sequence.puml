@@ -1,0 +1,60 @@
+@startuml
+
+!theme plain
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam ParticipantPadding 20
+skinparam BoxPadding 10
+
+actor "Покупатель" as Customer
+participant "Order Service" as Order
+participant "Cart Service" as Cart
+participant "Product Catalog Service" as Catalog
+participant "Payment Service" as Payment
+participant "Payment Provider" as PaymentProvider
+participant "Logistics Service" as Logistics
+participant "Logistics Provider" as LogisticsProvider
+participant "Notification Service" as Notification
+
+Customer -> Order : Оформить заказ
+Order -> Order: Создать заказ()
+
+group Отправляет одно событие, но читает его 2 сервиса
+Order -> Cart: Событие: OrderCreated
+Order -> Catalog: Событие: OrderCreated
+end
+Cart -> Cart: Удалить товары из корзины()
+Catalog -> Catalog: Зарезервировать товары()
+
+Catalog -> Order: Событие: ProductsReserved
+Order -> Order: Изменить статус заказа на "Ожидает оплаты"()
+
+Customer -> Payment: Инициировать оплату
+Payment -> PaymentProvider: Произвести оплату
+PaymentProvider --> Payment: Оплата успешна
+
+group Отправляет одно событие, но читает его 2 сервиса
+Payment -> Order: Событие: PaymentSucceeded
+Payment -> Logistics: Событие: PaymentSucceeded
+end
+Order -> Order: Изменить статус заказа на "Оплачен и готовится к отправке"()
+Logistics -> LogisticsProvider: Создать заявку на доставку
+LogisticsProvider --> Logistics: Заявка принята
+
+group Отправляет одно событие, но читает его 2 сервиса
+Logistics -> Order: Событие: ShipmentRequestAccepted
+Logistics -> Notification: Событие: ShipmentRequestAccepted
+end
+Notification -> Notification: Уведомить продавца
+Order -> Order: Изменить статус заказа на "Передан в доставку"()
+LogisticsProvider -> Logistics: Доставка завершена
+
+group Отправляет одно событие, но читает его 2 сервиса
+Logistics -> Order: Событие: DeliveryCompleted
+Logistics -> Catalog: Событие: DeliveryCompleted
+end
+Order -> Order: Изменить статус заказа на "Доставлен"()
+Catalog -> Catalog: Списать товары()
+ 
+@enduml

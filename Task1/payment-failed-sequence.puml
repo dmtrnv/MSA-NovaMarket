@@ -1,0 +1,44 @@
+@startuml
+
+!theme plain
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam ParticipantPadding 20
+skinparam BoxPadding 10
+
+actor "Покупатель" as Customer
+participant "Order Service" as Order
+participant "Cart Service" as Cart
+participant "Product Catalog Service" as Catalog
+participant "Payment Service" as Payment
+participant "Payment Provider" as PaymentProvider
+
+Customer -> Order : Оформить заказ
+Order -> Order: Создать заказ()
+
+group Отправляет одно событие, но читает его 2 сервиса
+Order -> Cart: Событие: OrderCreated
+Order -> Catalog: Событие: OrderCreated
+end
+Cart -> Cart: Удалить товары из корзины()
+Catalog -> Catalog: Зарезервировать товары()
+
+Catalog -> Order: Событие: ProductsReserved
+Order -> Order: Изменить статус заказа на "Ожидает оплаты"()
+
+Customer -> Payment: Инициировать оплату
+Payment -> PaymentProvider: Произвести оплату
+PaymentProvider --> Payment: Оплата не удалась
+
+group Отправляет одно событие, но читает его 2 сервиса
+Payment -> Order: Событие: PaymentFailed
+Payment -> Catalog: Событие: PaymentFailed
+end
+Order -> Order: Изменить статус заказа на "Отменен"()
+Catalog -> Catalog: Вернуть товары из резервации()
+
+Catalog -> Notification: Событие: ProductsReservationReleased
+Notification -> Notification: Уведомить продавца
+ 
+@enduml

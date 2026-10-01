@@ -1,0 +1,119 @@
+@startuml
+
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+LAYOUT_LEFT_RIGHT()
+LAYOUT_WITH_LEGEND()
+
+Person(customer, "Покупатель", "Пользователь интернет-магазина")
+Person(seller, "Продавец", "Получает уведомления о зак``азах")
+
+System_Ext(paymentGateway, "Payment Gateway", "Внешняя платёжная система")
+System_Ext(logisticsProvider, "Logistics Provider", "Внешний логистический провайдер")
+System_Ext(smtp, "SMTP", "Почтовая инфраструктура")
+System_Ext(s3, "S3", "Хранение файлов")
+System_Ext(keycloak, "Keycloak", "Аутентификация и авторизация")
+
+System_Boundary(shop, "Nova Market") {
+    Container(frontend, "Frontend", React", "Пользовательский интерфейс")
+    Container(gateway, "API Gateway", "NGINX", "Единая точка входа для клиентских запросов")
+    Container(apiComposition, "Backend / API Composition", "C#", "Оркестрация запросов к микросервисам")
+
+    Container(order, "Order Service", "C#", "Управление заказами и статусами заказов")
+    Container(cart, "Cart Service", "C#", "Управление товарами в корзине")
+    Container(catalog, "Product Catalog Service", "C#", "Каталог товаров, рейтинги и резервирование товаров")
+    Container(review, "Review Service", "C#", "Отзывы и оценки товаров")
+    Container(payment, "Payment Service", "C#", "Обработка оплаты")
+    Container(logistics, "Logistics Service", "C#", "Формирование заявок на доставку и отслеживание процесса доставки")
+    Container(notification, "Notification Service", "C#", "Отправка email-уведомлений")
+
+    ContainerDb(orderDb, "Order DB", "PostgreSQL", "Данные заказов и их статусов")
+    ContainerDb(cartDb, "Cart DB", "PostgreSQL", "Данные корзин")
+    ContainerDb(catalogDb, "Catalog DB", "PostgreSQL", "Товары, остатки и рейтинги")
+    ContainerDb(reviewDb, "Review DB", "PostgreSQL", "Отзывы и оценки")
+    ContainerDb(paymentDb, "Payment DB", "PostgreSQL", "Данные платежей и их статусов")
+    ContainerDb(logisticsDb, "Logistics DB", "PostgreSQL", "Заявки на доставку и статусы")
+    ContainerDb(notificationDb, "Notification DB", "PostgreSQL", "Данные уведомлений")
+ 
+    ContainerQueue(topicReviewPublished, "Топик событий ReviewPublished", "Apache Kafka", "Отзыв опубликован")
+    ContainerQueue(topicProductDeleted, "Топик событий ProductDeleted", "Apache Kafka", "Товар удалён из каталога")
+    ContainerQueue(topicOrderCreated, "Топик событий OrderCreated", "Apache Kafka", "Заказ создан")
+    ContainerQueue(topicProductsReserved, "Топик событий ProductsReserved", "Apache Kafka", "Товары зарезервированы")
+    ContainerQueue(topicReservationFailed, "Топик событий ProductsReservationFailed", "Apache Kafka", "Резервация товаров не удалась")
+    ContainerQueue(topicPaymentSucceeded, "Топик событий PaymentSucceeded", "Apache Kafka", "Оплата успешна")
+    ContainerQueue(topicPaymentFailed, "Топик событий PaymentFailed", "Apache Kafka", "Оплата не прошла")
+    ContainerQueue(topicShipmentRequestAccepted, "Топик событий ShipmentRequestAccepted", "Apache Kafka", "Заявка на доставку принята")
+    ContainerQueue(topicDeliveryCompleted, "Топик событий DeliveryCompleted", "Apache Kafka", "Доставка завершена")
+    ContainerQueue(topicDeliveryFailed, "Топик событий DeliveryFailed", "Apache Kafka", "Доставка не удалась")
+}
+
+Rel(customer, frontend, "Использует")
+Rel(seller, frontend, "Использует")
+Rel(frontend, gateway, "Вызывает", "HTTPS")
+Rel(gateway, apiComposition, "Маршрутизирует запросы", "HTTP")
+Rel(gateway, s3, "Скачивает медиа", "S3 API")
+Rel(apiComposition, order, "Вызывает", "HTTP")
+Rel(apiComposition, cart, "Вызывает", "HTTP")
+Rel(apiComposition, catalog, "Вызывает", "HTTP")
+Rel(apiComposition, review, "Вызывает", "HTTP")
+Rel(apiComposition, payment, "Вызывает", "HTTP")
+Rel(apiComposition, logistics, "Вызывает", "HTTP")
+Rel(apiComposition, notification, "Вызывает", "HTTP")
+Rel(frontend, keycloak, "Аутентификация", "OIDC")
+Rel(apiComposition, keycloak, "Проверка токена", "OIDC")
+
+Rel(order, orderDb, "Читает/записывает", "SQL")
+Rel(cart, cartDb, "Читает/записывает", "SQL")
+Rel(catalog, catalogDb, "Читает/записывает", "SQL")
+Rel(review, reviewDb, "Читает/записывает", "SQL")
+Rel(payment, paymentDb, "Читает/записывает", "SQL")
+Rel(logistics, logisticsDb, "Читает/записывает", "SQL")
+Rel(notification, notificationDb, "Читает/записывает", "SQL")
+
+Rel(payment, paymentGateway, "Проводит платёж", "HTTPS")
+Rel(logistics, logisticsProvider, "Передаёт заявку / получает статус", "HTTPS")
+Rel(notification, smtp, "Отправляет email", "SMTP")
+Rel(review, s3, "Хранит медиа", "S3 API")
+Rel(catalog, s3, "Хранит медиа", "S3 API")
+Rel(seller, smtp, "Получает email", "email")
+Rel(customer, smtp, "Получает email", "email")
+
+Rel(review, topicReviewPublished, "Публикует")
+Rel(catalog, topicReviewPublished, "Потребляет")
+
+Rel(catalog, topicProductDeleted, "Публикует")
+Rel(cart, topicProductDeleted, "Потребляет")
+
+Rel(order, topicOrderCreated, "Публикует")
+Rel(cart, topicOrderCreated, "Потребляет")
+Rel(catalog, topicOrderCreated, "Потребляет")
+
+Rel(catalog, topicProductsReserved, "Публикует")
+Rel(order, topicProductsReserved, "Потребляет")
+
+Rel(catalog, topicReservationFailed, "Публикует")
+Rel(order, topicReservationFailed, "Потребляет")
+
+Rel(payment, topicPaymentSucceeded, "Публикует")
+Rel(order, topicPaymentSucceeded, "Потребляет")
+Rel(logistics, topicPaymentSucceeded, "Потребляет")
+
+Rel(payment, topicPaymentFailed, "Публикует")
+Rel(order, topicPaymentFailed, "Потребляет")
+Rel(catalog, topicPaymentFailed, "Потребляет")
+
+Rel(logistics, topicShipmentRequestAccepted, "Публикует")
+Rel(notification, topicShipmentRequestAccepted, "Потребляет")
+Rel(order, topicShipmentRequestAccepted, "Потребляет")
+
+Rel(logistics, topicDeliveryCompleted, "Публикует")
+Rel(order, topicDeliveryCompleted, "Потребляет")
+Rel(catalog, topicDeliveryCompleted, "Потребляет")
+
+Rel(logistics, topicDeliveryFailed, "Публикует")
+Rel(order, topicDeliveryFailed, "Потребляет")
+Rel(payment, topicDeliveryFailed, "Потребляет")
+Rel(catalog, topicDeliveryFailed, "Потребляет")
+Rel(notification, topicDeliveryFailed, "Потребляет")
+
+@enduml
